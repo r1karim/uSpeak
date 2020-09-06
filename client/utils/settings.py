@@ -1,0 +1,14 @@
+BUFFER_SIZE = 1024
+
+DEBUG_MODE = True
+
+SERVER_MESSAGE = 'server_message'
+SERVER_DETAILS = 'server_details'
+
+USER_MESSAGE = 'user_message'
+
+
+CLIENT_SCREEN_WIDTH = 720
+CLIENT_SCREEN_HEIGHT = 420
+
+ARGUMENTS_LENGTH = 3
