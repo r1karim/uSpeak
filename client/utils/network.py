@@ -8,7 +8,7 @@ class Network():
 	server_channels = []
 	server_users = []
 
-	def __init__(self, srv_ip, srv_port, username, gui_event,channels_gui, users_gui):
+	def __init__(self, srv_ip, srv_port, username, gui_event):
 		self.sock = socket.socket()
 		self.ip = srv_ip
 
@@ -56,14 +56,27 @@ class Network():
 					except:
 						pass
 
-				elif data['type'] == globalsettings.SERVER_MESSAGE:
+				elif data['type'] == globalsettings.SERVER_MESSAGE or data['type'] == globalsettings.USER_LEFT:
+					
+					if data['type'] == globalsettings.USER_LEFT:
+
+						data['message']['message'] = f"<{data['message']['time'].hour}:{data['message']['time'].minute}:{data['message']['time'].second}>" + ' ' + data['message']['username'] + ' has left the chat'
+						Network.server_users = [user for user in Network.server_users if user['username'] != data['message']['username']]
+						self.event.users_list.clear()
+						self.event.users_list.addItems([user['username'] for user in Network.server_users])
+
 					[channel for channel in Network.server_channels if channel['channel_name'] == data['message']['channel_name']][0]['messages'].append(data['message']['message'])
+					
 					if self.event.selected_channel == data['message']['channel_name']:
+					
 						self.event.chat_box.append(data['message']['message'])
+
+
 
 			except Exception as exception:
 				print(exception)
-				print('gay')
+
+
 	def disconnect(self):
 		self.sock.close()
 

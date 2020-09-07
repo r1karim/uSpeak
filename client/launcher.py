@@ -6,7 +6,7 @@ from utils import settings as globalsettings
 
 def get_data_from_user():
 	global frame
-	
+
 	try:
 		username = frame.username_input.text()
 		server_ip = frame.ip_input.text()
@@ -20,8 +20,8 @@ def get_data_from_user():
 	except ValueError:
 		frame.log.setText(frame.log.toPlainText()  + f"ERROR: Could not connect because the following port is not valid: {server_port}" + "\n")
 	
-	except Exception as exc:
-		frame.log.setText(frame.log.toPlainText()  + f"ERROR: Could not connect because: {exc}" + "\n")
+	except Exception as exception:
+		frame.log.setText(frame.log.toPlainText()  + f"ERROR: Could not connect because: {exception}" + "\n")
 	
 	else:
 		frame.log.setText(frame.log.toPlainText()  + f"Connecting to {server_ip}:{server_port} as {username}..." + "\n")
@@ -30,20 +30,17 @@ def get_data_from_user():
 
 	return None
 
-SCREEN_WIDTH = 350
-SCREEN_HEIGHT = 120
-
 application = QApplication(sys.argv)
 
-X, Y = GetSystemMetrics(0) / 2 - SCREEN_WIDTH / 2, GetSystemMetrics(1) / 2 - SCREEN_HEIGHT / 2 - 72
+X, Y = GetSystemMetrics(0) / 2 - globalsettings.LAUNCHER_SCREEN_WIDTH / 2, GetSystemMetrics(1) / 2 - globalsettings.LAUNCHER_SCREEN_HEIGHT / 2 - 72
 
-frame = window_frame(application, 'uSpeak - Launcher', X, Y, SCREEN_WIDTH, SCREEN_HEIGHT, stylesheet="background-color: rgb(42,42,42); color: white;", resizable=False)
+frame = window_frame(application, 'uSpeak - Launcher', X, Y, globalsettings.LAUNCHER_SCREEN_WIDTH, globalsettings.LAUNCHER_SCREEN_HEIGHT, stylesheet="background-color: rgb(42,42,42); color: white;", resizable=False)
 frame.username_input = input_field(frame, 10, 10, 'username', stylesheet='background-color: grey;')
 frame.ip_input = input_field(frame, 120, 10, 'server ip', stylesheet='background-color: grey;')
 frame.port_input = input_field(frame, 230, 10, 'port', stylesheet='background-color: grey;')
 
 if globalsettings.DEBUG_MODE:
-	frame.username_input.setText("adrian")
+	frame.username_input.setText("user711")
 	frame.ip_input.setText("127.0.0.1")
 	frame.port_input.setText("7777")
 

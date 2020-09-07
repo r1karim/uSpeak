@@ -18,4 +18,8 @@ SERVER_MESSAGE = 'server_message'
 
 SERVER_DETAILS = 'server_details'
 
-DEFAULT_CHANNELS = "news,general,offtopic"
+USER_LEFT = 'user_left'
+
+DEFAULT_CHANNELS = "news,general,offtopic" #Channel names should be separated with a comma
+
+COMMAND_PREFIX = '!'

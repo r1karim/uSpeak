@@ -1,10 +1,8 @@
 from . import settings as globalsettings
+from . import functions, command
 import socket, pickle, datetime, errno, select
 from threading import Thread
 
-def update_dict(spec_dict, newkey, newvalue):
-	spec_dict.update({newkey: newvalue})
-	return spec_dict
 
 class User():
 
@@ -12,6 +10,7 @@ class User():
 		self.socket = socket
 		self.ip = ip
 		self.username = username
+		self.admin = False
 
 	def get_user_ip(self):
 		return self.ip
@@ -31,9 +30,11 @@ class User():
 
 		except ConnectionResetError:
 			print('user %s has probably disconnected.' % (self.get_user_name()))
+			del self
 
 		except Exception as exception:
 			print(f'Could not send message to user {self.get_user_name()} error code: {exception}')
+
 
 class Network():
 
@@ -83,6 +84,7 @@ class Network():
 				new_user.set_user_name(socket.recv(globalsettings.USERNAME_BUFFER).decode('UTF-8'))
 
 				try:
+
 					if len([user for user in Network.online_users if user.get_user_name() == new_user.get_user_name()]):
 						new_user.close_connection()
 						print("closing connection for this user...")
@@ -95,9 +97,8 @@ class Network():
 						temp = self.channels
 						temp_users = Network.online_users
 						temp_users = [{'username': user.get_user_name(), 'id': i} for i, user in  enumerate(Network.online_users)]
+						[channel.update(messages=channel['messages'][len(channel['messages'])-globalsettings.MAX_LOAD_MESSAGES_COUNT:]) for channel in temp if len(channel['messages']) > globalsettings.MAX_LOAD_MESSAGES_COUNT]
 
-						[setattr(channel, 'messages', channel['messages'][len(channel['messages'])-globalsettings.MAX_LOAD_MESSAGES_COUNT:]) for channel in temp if len(channel['messages']) >= globalsettings.MAX_LOAD_MESSAGES_COUNT]
-						
 						time = datetime.datetime.now()
 						join_message = f"<{time.hour}:{time.minute}:{time.second}> {new_user.get_user_name()} has joined the chat."
 					
@@ -119,25 +120,34 @@ class Network():
 			try:
 				messages = []
 				for user in Network.online_users:
+
 					try:
-						messages.append(update_dict(pickle.loads(user.socket.recv(globalsettings.MAX_BUFFER)), 'user', user))
-		
-					except IOError as e:
-						print('Socket error!i!!ii!')
+						messages.append(functions.update_dict(pickle.loads(user.socket.recv(globalsettings.MAX_BUFFER)), 'user', user))
 
 					except ConnectionResetError:
-						print(f'{user.get_user_name()} has disconnected.')
 
-					except Exception as exception:
+						time = datetime.datetime.now()
+
+						[user_ex.send_message(globalsettings.USER_LEFT,{'channel_name': self.channels[0]['channel_name'], 'username': user.get_user_name(), 'time': time}) for user_ex in Network.online_users if user_ex != user]
+						
+						self.channels[0]['messages'].append(f"<{time.hour}:{time.minute}:{time.second}> {user.get_user_name()} has left the chat.")
+
+						Network.online_users.remove(user)
+
+					except:
 						pass
 
 				if len(messages):
-					time = datetime.datetime.now()
-					time_text = f'<{time.hour}:{time.minute}:{time.second}>'
-					for user in Network.online_users:
-						[user.send_message(globalsettings.SERVER_MESSAGE,{'channel_name': message['channel_name'], 'message':  time_text + ' ' + message['user'].get_user_name() + ': ' + message['message']}) for message in messages]
-				else:
-					pass
+
+					time_text = f'<{datetime.datetime.now().hour}:{datetime.datetime.now().minute}:{datetime.datetime.now().second}>'
+
+					for user in Network.online_users: [user.send_message(globalsettings.SERVER_MESSAGE,{'channel_name': message['channel_name'], 'message': functions.append_return([channel for channel in self.channels if channel['channel_name'] == message['channel_name']][0]['messages'], time_text + ' ' + message['user'].get_user_name() + ': ' + message['message'])}) for message in messages if message['message'][0] != globalsettings.COMMAND_PREFIX]
+					
+					try:
+						[[cmd for cmd in command.Command.server_commands if cmd.text == split(message)[0]][0].execute(message['user'], *split(message)[1:]) for message in messages if message['message'][0] == globalsettings.COMMAND_PREFIX]
+					except:
+						
+						continue
 
 			except Exception as exception:
 				print(exception)

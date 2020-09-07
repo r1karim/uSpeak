@@ -1,4 +1,4 @@
-import sys, time
+import sys, time, os
 from PyQt5.QtWidgets import QApplication, QAction, QListWidget
 from PyQt5.QtGui import QIcon
 from utils.events import Event
@@ -16,7 +16,6 @@ def main(arguments):
 	try:
 		if len(arguments) != globalsettings.ARGUMENTS_LENGTH:
 			raise Exception(f"required 3 arguments received {len(arguments)}.")
-
 
 		client_frame = window_frame(client_app, "uSpeak - client", GetSystemMetrics(0) / 2 - globalsettings.CLIENT_SCREEN_WIDTH / 2, GetSystemMetrics(1) / 2 - globalsettings.CLIENT_SCREEN_HEIGHT / 2, globalsettings.CLIENT_SCREEN_WIDTH, globalsettings.CLIENT_SCREEN_HEIGHT , stylesheet='', resizable=False)
 
@@ -40,14 +39,15 @@ def main(arguments):
 		message_button = button(client_frame, "Send message", 520, 387, lambda: client.send_message(globalsettings.USER_MESSAGE, event.selected_channel, event.get_input_text()))
 
 		exitAct = QAction(QIcon(''), '&Disconnect', client_frame)
-		exitAct.triggered.connect(sys.exit)
+		exitAct.triggered.connect(os._exit)
+
 		menubar = client_frame.menuBar()
 		server_menu = menubar.addMenu('Server')
 		action = server_menu.addAction(exitAct)
 
 		event = Event(chat_box, chat_input, userlist, channellist)
 
-		client = Network(arguments[0], int(arguments[1]), arguments[2], event,channellist, userlist)
+		client = Network(arguments[0], int(arguments[1]), arguments[2], event)
 		client.establish_connection()
 		time.sleep(0.3)
 		event.set_selected_channel(channellist.item(0))
