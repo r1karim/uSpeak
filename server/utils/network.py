@@ -3,7 +3,6 @@ from . import functions, command
 import socket, pickle, datetime, errno, select
 from threading import Thread
 
-
 class User():
 
 	def __init__(self, socket, ip, username=''):
@@ -30,15 +29,31 @@ class User():
 
 		except ConnectionResetError:
 			print('user %s has probably disconnected.' % (self.get_user_name()))
+			Network.online_users.remove(self)
 			del self
 
 		except Exception as exception:
 			print(f'Could not send message to user {self.get_user_name()} error code: {exception}')
 
+	def set_admin(self, toggle):
+		self.admin = toggle
+
+		if toggle:
+			print(self.get_user_name() + " has logged as server administrator.")
+
+	def is_admin(self):
+		return self.admin
+
+	def kick_user(self):
+		print(self.get_user_name() + " has been kicked from the server!")
+		Network.online_users.remove(self)
+		del self
 
 class Network():
 
 	online_users = []
+
+	rcon_password = ''
 
 	def __init__(self, hostname, port, max_users, rcon_pass, channels):
 
@@ -48,6 +63,7 @@ class Network():
 		self.hostname = hostname
 		self.max_users = max_users
 		self.rcon_pass = rcon_pass
+		Network.rcon_password = rcon_pass
 		self.channels = []
 
 		[self.channels.append({'channel_name': channel, 'messages': []}) for channel in channels]
@@ -62,19 +78,24 @@ class Network():
 		print(f"Rcon password: {rcon_pass}")
 		print(f"Channels: {channels}")
 
+		#first two parameters are reserved for user and channelname for every command function
+		self.rcon_command = command.Command('rcon', functions.rcon)
+
 		self.connection_thread = Thread(target=self.listen_to_connection)
 		self.packets_thread = Thread(target=self.listen_to_packets)
 
-	def start(self):
+		print(command.Command.server_commands)
 
-		print("Server is starting...")
+	def start(self):
+		print("Server has started")
 		self.connection_thread.start()
 		self.packets_thread.start()
 
 	def listen_to_connection(self):
 		while True:
 			try:
-				if len(Network.online_users) > self.max_users:
+				#cConnection requests will be ignored if the current user count is equal or exceeds the maximum count.
+				if len(Network.online_users) >= self.max_users:
 					continue
 	
 				socket, address = self.sock.accept()
@@ -94,9 +115,11 @@ class Network():
 						print("Adding user %s" % (new_user.get_user_name()))
 						Network.online_users.append(new_user)
 
-						temp = self.channels
 						temp_users = Network.online_users
 						temp_users = [{'username': user.get_user_name(), 'id': i} for i, user in  enumerate(Network.online_users)]
+
+						#stores channels details and messages in a temporary variable that gets altered by deleting every message prior to the five latest in every channel and gets sent to the new user
+						temp = self.channels
 						[channel.update(messages=channel['messages'][len(channel['messages'])-globalsettings.MAX_LOAD_MESSAGES_COUNT:]) for channel in temp if len(channel['messages']) > globalsettings.MAX_LOAD_MESSAGES_COUNT]
 
 						time = datetime.datetime.now()
@@ -131,6 +154,7 @@ class Network():
 						[user_ex.send_message(globalsettings.USER_LEFT,{'channel_name': self.channels[0]['channel_name'], 'username': user.get_user_name(), 'time': time}) for user_ex in Network.online_users if user_ex != user]
 						
 						self.channels[0]['messages'].append(f"<{time.hour}:{time.minute}:{time.second}> {user.get_user_name()} has left the chat.")
+						print(self.channels[0]['messages'][len(self.channels[0]['messages'])-1])
 
 						Network.online_users.remove(user)
 
@@ -141,13 +165,20 @@ class Network():
 
 					time_text = f'<{datetime.datetime.now().hour}:{datetime.datetime.now().minute}:{datetime.datetime.now().second}>'
 
+					#sends every message to every user in the right channel...
 					for user in Network.online_users: [user.send_message(globalsettings.SERVER_MESSAGE,{'channel_name': message['channel_name'], 'message': functions.append_return([channel for channel in self.channels if channel['channel_name'] == message['channel_name']][0]['messages'], time_text + ' ' + message['user'].get_user_name() + ': ' + message['message'])}) for message in messages if message['message'][0] != globalsettings.COMMAND_PREFIX]
 					
-					try:
-						[[cmd for cmd in command.Command.server_commands if cmd.text == split(message)[0]][0].execute(message['user'], *split(message)[1:]) for message in messages if message['message'][0] == globalsettings.COMMAND_PREFIX]
-					except:
+					messages = [message for message in messages if message['message'][0] == globalsettings.COMMAND_PREFIX]
+		
+					for message in messages:
+						message_split = functions.split(message['message'])
+						print(message_split)
 						
-						continue
+						try: [command for command in command.Command.server_commands if command.text == message_split[0][1:]][0].execute(message['user'], message['channel_name'],*message_split[1:])
+						
+						except IndexError: message['user'].send_message(globalsettings.SERVER_MESSAGE, {'channel_name': message['channel_name'], 'message': 'Unknown command'})
+						
+						except: message['user'].send_message(globalsettings.SERVER_MESSAGE, "Invalid command usage.")
 
 			except Exception as exception:
 				print(exception)
