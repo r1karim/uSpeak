@@ -84,7 +84,6 @@ class Network():
 		self.connection_thread = Thread(target=self.listen_to_connection)
 		self.packets_thread = Thread(target=self.listen_to_packets)
 
-		print(command.Command.server_commands)
 
 	def start(self):
 		print("Server has started")
@@ -94,7 +93,7 @@ class Network():
 	def listen_to_connection(self):
 		while True:
 			try:
-				#cConnection requests will be ignored if the current user count is equal or exceeds the maximum count.
+				#connection requests will be ignored if the current user count is equal or exceeds the maximum count.
 				if len(Network.online_users) >= self.max_users:
 					continue
 	
@@ -162,23 +161,24 @@ class Network():
 						pass
 
 				if len(messages):
-
+					#
 					time_text = f'<{datetime.datetime.now().hour}:{datetime.datetime.now().minute}:{datetime.datetime.now().second}>'
-
 					#sends every message to every user in the right channel...
 					for user in Network.online_users: [user.send_message(globalsettings.SERVER_MESSAGE,{'channel_name': message['channel_name'], 'message': functions.append_return([channel for channel in self.channels if channel['channel_name'] == message['channel_name']][0]['messages'], time_text + ' ' + message['user'].get_user_name() + ': ' + message['message'])}) for message in messages if message['message'][0] != globalsettings.COMMAND_PREFIX]
-					
+					#removes every message that isn't starting with the command prefix
 					messages = [message for message in messages if message['message'][0] == globalsettings.COMMAND_PREFIX]
-		
+					#
 					for message in messages:
+						#eliminates white spaces and splits the message
 						message_split = functions.split(message['message'])
-						print(message_split)
-						
+
 						try: [command for command in command.Command.server_commands if command.text == message_split[0][1:]][0].execute(message['user'], message['channel_name'],*message_split[1:])
 						
+						#IndexError gets thrown when list index (0) out of range meaning no user with the specified name was found
 						except IndexError: message['user'].send_message(globalsettings.SERVER_MESSAGE, {'channel_name': message['channel_name'], 'message': 'Unknown command'})
 						
-						except: message['user'].send_message(globalsettings.SERVER_MESSAGE, "Invalid command usage.")
+						#
+						except: message['user'].send_message(globalsettings.SERVER_MESSAGE, {"channel_name": message['channel_name'],"message":"Invalid command usage."})
 
 			except Exception as exception:
 				print(exception)

@@ -36,7 +36,9 @@ def main(arguments):
 		chat_input = input_field(client_frame, 10, 387, 'Message #selected channel')
 		chat_input.resize(470, 30)
 
+
 		message_button = button(client_frame, "Send message", 520, 387, lambda: client.send_message(globalsettings.USER_MESSAGE, event.selected_channel, event.get_input_text()))
+		chat_input.returnPressed.connect(message_button.click)
 
 		exitAct = QAction(QIcon(''), '&Disconnect', client_frame)
 		exitAct.triggered.connect(os._exit)

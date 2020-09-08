@@ -1,6 +1,6 @@
 BUFFER_SIZE = 1024
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 SERVER_MESSAGE = 'server_message'
 SERVER_DETAILS = 'server_details'

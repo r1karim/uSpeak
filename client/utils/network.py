@@ -72,7 +72,7 @@ class Network():
 						self.event.chat_box.append(data['message']['message'])
 
 
-
+			
 			except Exception as exception:
 				print(exception)
 
