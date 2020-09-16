@@ -39,22 +39,19 @@ class Network():
 				data = pickle.loads(data_in_bytes)
 
 				if data['type'] == globalsettings.SERVER_DETAILS:
-
 					try:
 						if data['message']['channels']:
 							Network.server_channels = data['message']['channels']
 							self.event.channels_list.clear()
 							self.event.channels_list.addItems([channel['channel_name'] for channel in Network.server_channels])
-					except:
+					except: 
 						pass
-
-					try:
+					finally:
 						if data['message']['users']:
 							Network.server_users = data['message']['users']
 							self.event.users_list.clear()
 							self.event.users_list.addItems([user['username'] for user in Network.server_users])
-					except:
-						pass
+				
 
 				elif data['type'] == globalsettings.SERVER_MESSAGE or data['type'] == globalsettings.USER_LEFT:
 					
