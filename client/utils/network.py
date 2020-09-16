@@ -43,14 +43,13 @@ class Network():
 							Network.server_channels = data['message']['channels']
 							self.event.channels_list.clear()
 							self.event.channels_list.addItems([channel['channel_name'] for channel in Network.server_channels])
-					except: 
-						pass
+					except: pass
 					finally:
 						if data['message']['users']:
 							Network.server_users = data['message']['users']
 							self.event.users_list.clear()
 							self.event.users_list.addItems([user['username'] for user in Network.server_users])
-				
+
 				elif data['type'] == globalsettings.SERVER_MESSAGE or data['type'] == globalsettings.USER_LEFT:
 					
 					if data['type'] == globalsettings.USER_LEFT:
