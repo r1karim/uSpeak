@@ -18,6 +18,7 @@ git clone https://github.com/adri711/uSpeak.git
 5. Open the launcher in the client folder and connect to the server
 
 ## Pictures
+
 ![ss_image1](screenshots/screenshot1.PNG)
 
 ![ss_image2](screenshots/screenshot2.PNG)
