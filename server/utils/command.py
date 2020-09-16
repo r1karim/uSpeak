@@ -9,6 +9,5 @@ class Command():
 	def execute(self, *args):
 		self.func(*args)
 
-
 	def __str__(self):
 		return self.text
